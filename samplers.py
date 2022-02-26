@@ -6,7 +6,7 @@ def mcmc_sampler(outcome_model,
     with outcome_model:
         # draw posterior samples
         step = pm.Metropolis()
-        trace = pm.sample(10000, 
+        trace = pm.sample(5000, 
                           step=step,
                           #tune=10000,
                           tune=1000,
@@ -118,7 +118,7 @@ def UIP_Dirichlet(D,summaryDs,
     return trace
 
 
-def BPH(D,n_intervals=5,
+def BPH(D,n_intervals=10,
         cov_adj=False,
         random_state=2021):
     
@@ -127,10 +127,14 @@ def BPH(D,n_intervals=5,
     
     # preprocessing
     y_interval = D.y.copy()
-    y_interval = np.append(y_interval[D.T==1],[np.max(y_interval)+1,0])
-    interval_bounds = np.quantile(np.unique(y_interval),np.linspace(0,1,n_intervals+1))
-    # avoid tied values
-    interval_bounds[1:-1] = np.array([0.95*item if item in interval_bounds else item for item in interval_bounds[1:-1]])
+    
+    # select only the event time
+    y_interval = np.append(y_interval[D.delta==1],[np.max(y_interval)+1,0])
+    interval_bounds = np.quantile(np.unique(y_interval),
+                          np.linspace(0,1,n_intervals+1))
+    # avoid the tied value
+    interval_bounds[1:-1] = np.array([0.95*item if item in y_interval else item for item in interval_bounds[1:-1]])
+    
     intervals = np.arange(n_intervals)
     interval_length = np.diff(interval_bounds)
     last_period = np.array([np.sum(interval_bounds<=yy)-1 for yy in D.y]).astype(int)
@@ -164,7 +168,7 @@ def BPH(D,n_intervals=5,
 
 
 def BPH_UIP_Dirichlet(D,summaryDs,
-                      n_intervals=5,
+                      n_intervals=10,
                       cov_adj=False,
                       gammas_ps=False,
                       bal_method='NearMatch',
@@ -203,10 +207,14 @@ def BPH_UIP_Dirichlet(D,summaryDs,
 
         # preprocessing
         y_interval = D.y.copy()
-        y_interval = np.append(y_interval[D.T==1],[np.max(y_interval)+1,0])
-        interval_bounds = np.quantile(np.unique(y_interval),np.linspace(0,1,n_intervals+1))
-        # avoid tied values
-        interval_bounds[1:-1] = np.array([0.95*item if item in interval_bounds else item for item in interval_bounds[1:-1]])
+        
+        # select only the event time
+        y_interval = np.append(y_interval[D.delta==1],[np.max(y_interval)+1,0])
+        interval_bounds = np.quantile(np.unique(y_interval),
+                              np.linspace(0,1,n_intervals+1))
+        # avoid the tied value
+        interval_bounds[1:-1] = np.array([0.95*item if item in y_interval else item for item in interval_bounds[1:-1]])
+        
         intervals = np.arange(n_intervals)
         interval_length = np.diff(interval_bounds)
         last_period = np.array([np.sum(interval_bounds<=yy)-1 for yy in D.y]).astype(int)
